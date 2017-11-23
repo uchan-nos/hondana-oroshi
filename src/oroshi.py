@@ -7,7 +7,6 @@ from typing import Iterable
 BookRecord = collections.namedtuple(
     'BookRecord',
     ['record_id', 'status', 'title', 'isbn10', 'isbn13', 'exists', 'inventoried'])
-RecordAction = collections.namedtuple('RecordAction', ['record', 'action'])
 
 
 class RecordStatus(enum.Enum):
@@ -17,31 +16,54 @@ class RecordStatus(enum.Enum):
 
 
 class Action:
+    def __init__(self, record: BookRecord):
+        self._record = record
+
+    @property
+    def record(self) -> BookRecord:
+        return self._record
+
     def act(self):
         raise NotImplementedError()
 
 
 class TakeInventory(Action):
+    def __init__(self, record: BookRecord):
+        super().__init__(record)
+
     def act(self):
         pass
 
 
 class RegisterNew(Action):
+    def __init__(self, isbn: str):
+        super().__init__(None)
+        self._isbn = isbn
+
     def act(self):
         pass
 
 
 class Discard(Action):
+    def __init__(self, record: BookRecord):
+        super().__init__(record)
+
     def act(self):
         pass
 
 
 class Investigate(Action):
+    def __init__(self, record: BookRecord):
+        super().__init__(record)
+
     def act(self):
         pass
 
 
 class Found(Action):
+    def __init__(self, record: BookRecord):
+        super().__init__(record)
+
     def act(self):
         pass
 
@@ -91,7 +113,7 @@ def sort_records(records: Iterable[BookRecord]) -> Iterable[BookRecord]:
 
 
 def decide_actions(barcodes: Iterable[str],
-                   records: Iterable[BookRecord]) -> Iterable[RecordAction]:
+                   records: Iterable[BookRecord]) -> Iterable[Action]:
     isbn_record_map = split_records_by_isbn(records)
     for isbn, records in isbn_record_map.items():
         not_inventoried_records = [r for r in records if not r.inventoried]
@@ -105,19 +127,19 @@ def decide_actions(barcodes: Iterable[str],
             records = None
 
         if not records:
-            record_actions.append(RecordAction(None, RegisterNew()))
+            record_actions.append(RegisterNew(None))
             continue
 
         record = records.pop(0)
         if record.exists == 'x':
-            action = Discard()
+            action = Discard(record)
         elif record.status is RecordStatus.BORROWED:
-            action = Investigate()
+            action = Investigate(record)
         elif record.status is RecordStatus.LOST:
-            action = Found()
+            action = Found(record)
         else:
-            action = TakeInventory()
+            action = TakeInventory(record)
 
-        record_actions.append(RecordAction(record, action))
+        record_actions.append(action)
 
     return record_actions
