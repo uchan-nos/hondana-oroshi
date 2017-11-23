@@ -1,11 +1,13 @@
 import io
 import unittest
+from unittest import mock
 
 import oroshi
 
 
 ISBN1 = '9784789849944'
 ISBN2 = '9784839919849'
+ISBN3 = '4810180778'
 
 IN_SHELF = oroshi.RecordStatus.IN_SHELF
 BORROWED = oroshi.RecordStatus.BORROWED
@@ -24,6 +26,7 @@ FAKE_RECORD22 = oroshi.BookRecord(22, LOST,     'book1', '', ISBN1, 'o', False)
 FAKE_RECORD23 = oroshi.BookRecord(23, LOST,     'book1', '', ISBN1, 'x', True)
 FAKE_RECORD24 = oroshi.BookRecord(24, LOST,     'book1', '', ISBN1, 'x', False)
 FAKE_RECORD30 = oroshi.BookRecord(30, IN_SHELF, 'book2', '', ISBN2, 'o', False)
+FAKE_RECORD31 = oroshi.BookRecord(31, IN_SHELF, 'book3', ISBN3, '', 'o', False)
 
 
 class TestOroshi(unittest.TestCase):
@@ -39,6 +42,10 @@ class TestOroshi(unittest.TestCase):
         barcodes, last = oroshi.read_barcodes(inp)
         self.assertEqual(barcodes, [ISBN1])
         self.assertEqual(last, 'hogera')
+
+    def test_get_isbn(self):
+        self.assertEqual(oroshi.get_isbn(FAKE_RECORD1), ISBN1)
+        self.assertEqual(oroshi.get_isbn(FAKE_RECORD31), ISBN3)
 
     def test_split_records_by_isbn(self):
         records = [FAKE_RECORD1, FAKE_RECORD2, FAKE_RECORD3, FAKE_RECORD4,
@@ -152,3 +159,44 @@ class TestOroshi(unittest.TestCase):
         action, = oroshi.decide_actions([ISBN1], [FAKE_RECORD22])
         self.assertIsInstance(action, oroshi.Found)
         self.assertEqual(action.record, FAKE_RECORD22)
+
+
+class FakePrinter:
+    def __init__(self):
+        self.called = False
+
+    def __call__(self, msg: str):
+        self.msg = msg
+        self.called = True
+
+
+class TakeInventoryTest(unittest.TestCase):
+    def setUp(self):
+        self._instance = oroshi.TakeInventory(FAKE_RECORD2)
+
+    def test_act(self):
+        pass
+
+
+class DiscardTest(unittest.TestCase):
+    def setUp(self):
+        self._instance = oroshi.Discard(FAKE_RECORD4)
+        self._instance._print = FakePrinter()
+
+    def test_act(self):
+        self._instance.act()
+        self.assertTrue(self._instance._print.called)
+        self.assertIn('book1', self._instance._print.msg)
+        self.assertIn(ISBN1, self._instance._print.msg)
+
+
+class InvestigateTest(unittest.TestCase):
+    def setUp(self):
+        self._instance = oroshi.Investigate(FAKE_RECORD12)
+        self._instance._print = FakePrinter()
+
+    def test_act(self):
+        self._instance.act()
+        self.assertTrue(self._instance._print.called)
+        self.assertIn('book1', self._instance._print.msg)
+        self.assertIn(ISBN1, self._instance._print.msg)

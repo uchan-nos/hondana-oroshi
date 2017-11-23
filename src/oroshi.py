@@ -26,6 +26,9 @@ class Action:
     def act(self):
         raise NotImplementedError()
 
+    def _print(self, msg: str):
+        print(msg)
+
 
 class TakeInventory(Action):
     def __init__(self, record: BookRecord):
@@ -49,7 +52,8 @@ class Discard(Action):
         super().__init__(record)
 
     def act(self):
-        pass
+        self._print('Please discard this book: "{}" (ISBN={})'.format(
+            self.record.title, get_isbn(self.record)))
 
 
 class Investigate(Action):
@@ -57,7 +61,10 @@ class Investigate(Action):
         super().__init__(record)
 
     def act(self):
-        pass
+        self._print(
+            ('This book\'s borrowed on record, but it\'s here.'+
+            'Please investigate it: "{}" (ISBN={})').format(
+            self.record.title, get_isbn(self.record)))
 
 
 class Found(Action):
@@ -81,6 +88,12 @@ def read_barcodes(file=sys.stdin) -> (list, str):
         barcodes.append(line)
 
     return barcodes, None
+
+
+def get_isbn(record: BookRecord) -> str:
+    if record.isbn13:
+        return record.isbn13
+    return record.isbn10
 
 
 def split_records_by_isbn(records: Iterable[BookRecord]) -> dict:
