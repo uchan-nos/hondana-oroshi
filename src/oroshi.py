@@ -134,10 +134,7 @@ def decide_actions(barcodes: Iterable[str],
 
     record_actions = []
     for barcode in barcodes:
-        try:
-            records = isbn_record_map[barcode]
-        except KeyError:
-            records = None
+        records = isbn_record_map.get(barcode, None)
 
         if not records:
             record_actions.append(RegisterNew(None))
