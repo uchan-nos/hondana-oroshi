@@ -172,6 +172,7 @@ class TestOroshi(unittest.TestCase):
         oroshi.show_actions(actions, file=stdout)
 
         stdout.seek(0)
+        _ = stdout.readline()
         line = stdout.readline()
         self.assertIn(ISBN1, line)
         self.assertIn(FAKE_RECORD2.title, line)
@@ -182,6 +183,7 @@ class TestOroshi(unittest.TestCase):
         oroshi.show_actions(actions, file=stdout)
 
         stdout.seek(0)
+        _ = stdout.readline()
         line = stdout.readline()
         self.assertIn(ISBN1, line)
         self.assertNotIn(FAKE_RECORD2.title, line)

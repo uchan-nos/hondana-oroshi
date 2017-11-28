@@ -168,8 +168,12 @@ def decide_actions(barcodes: Iterable[str],
 
 
 def show_actions(actions: Iterable[Action], *, file=sys.stdout):
-    action_name_max = max(len(a.name) for a in actions)
-    line_format = '{:' + str(action_name_max) + '}  {} {}\n'
+    actname_max = max(len(a.name) for a in actions)
+    isbn_max = max(len(a.isbn) for a in actions)
+    line_format = '{:' + str(actname_max) + '}  {:' + str(isbn_max) + '}  {}\n'
+
+    # show header
+    file.write(line_format.format('Action', 'ISBN', 'Book title'))
 
     for action in actions:
         record = action.record
