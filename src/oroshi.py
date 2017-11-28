@@ -180,3 +180,17 @@ def show_actions(actions: Iterable[Action], *, file=sys.stdout):
         title = record.title if record else 'no-title'
         file.write(line_format.format(
             action.name, action.isbn, title))
+
+
+class Bookstore:
+    def find_records_by_isbn(self, isbn: str) -> Iterable[BookRecord]:
+        raise NotImplementedError()
+
+    def get_record(self, record_id: int) -> BookRecord:
+        raise NotImplementedError()
+
+    def add_record(self, record: BookRecord):
+        raise NotImplementedError()
+
+    def update_record(self, record: BookRecord):
+        raise NotImplementedError()
