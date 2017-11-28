@@ -29,7 +29,7 @@ FAKE_RECORD30 = oroshi.BookRecord(30, IN_SHELF, 'book2', '', ISBN2, 'o', False)
 FAKE_RECORD31 = oroshi.BookRecord(31, IN_SHELF, 'book3', ISBN3, '', 'o', False)
 
 
-class TestOroshi(unittest.TestCase):
+class OroshiFuncTest(unittest.TestCase):
 
     def test_read_barcodes(self):
         inp = io.StringIO('{}\n{}\n'.format(ISBN1, ISBN2))
@@ -176,6 +176,7 @@ class TestOroshi(unittest.TestCase):
         line = stdout.readline()
         self.assertIn(ISBN1, line)
         self.assertIn(FAKE_RECORD2.title, line)
+        self.assertIn(oroshi.TakeInventory(None).name, line)
 
     def test_show_actions_register_new(self):
         stdout = io.StringIO()
@@ -187,6 +188,7 @@ class TestOroshi(unittest.TestCase):
         line = stdout.readline()
         self.assertIn(ISBN1, line)
         self.assertNotIn(FAKE_RECORD2.title, line)
+        self.assertIn(oroshi.RegisterNew(None).name, line)
 
 
 class FakePrinter:
