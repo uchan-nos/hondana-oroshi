@@ -47,6 +47,11 @@ class TestOroshi(unittest.TestCase):
         self.assertEqual(oroshi.get_isbn(FAKE_RECORD1), ISBN1)
         self.assertEqual(oroshi.get_isbn(FAKE_RECORD31), ISBN3)
 
+    def test_action(self):
+        action = oroshi.Action(FAKE_RECORD1)
+        self.assertEqual(action.record, FAKE_RECORD1)
+        self.assertEqual(action.isbn, ISBN1)
+
     def test_split_records_by_isbn(self):
         records = [FAKE_RECORD1, FAKE_RECORD2, FAKE_RECORD3, FAKE_RECORD4,
                    FAKE_RECORD11, FAKE_RECORD12, FAKE_RECORD13, FAKE_RECORD14,
@@ -101,6 +106,7 @@ class TestOroshi(unittest.TestCase):
 
         self.assertIsInstance(actions[0], oroshi.RegisterNew)
         self.assertIsNone(actions[0].record)
+        self.assertEqual(actions[0].isbn, ISBN1)
 
     def test_decide_actions_あるISBNのバーコードがレコードより多い(self):
         # FAKE_RECORD2: 棚卸しておらず、本棚に存在する
@@ -159,6 +165,26 @@ class TestOroshi(unittest.TestCase):
         action, = oroshi.decide_actions([ISBN1], [FAKE_RECORD22])
         self.assertIsInstance(action, oroshi.Found)
         self.assertEqual(action.record, FAKE_RECORD22)
+
+    def test_show_actions(self):
+        stdout = io.StringIO()
+        actions = oroshi.decide_actions([ISBN1], [FAKE_RECORD2])
+        oroshi.show_actions(actions, file=stdout)
+
+        stdout.seek(0)
+        line = stdout.readline()
+        self.assertIn(ISBN1, line)
+        self.assertIn(FAKE_RECORD2.title, line)
+
+    def test_show_actions_register_new(self):
+        stdout = io.StringIO()
+        actions = oroshi.decide_actions([ISBN1], [])
+        oroshi.show_actions(actions, file=stdout)
+
+        stdout.seek(0)
+        line = stdout.readline()
+        self.assertIn(ISBN1, line)
+        self.assertNotIn(FAKE_RECORD2.title, line)
 
 
 class FakePrinter:

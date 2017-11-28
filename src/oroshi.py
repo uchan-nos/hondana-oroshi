@@ -23,6 +23,14 @@ class Action:
     def record(self) -> BookRecord:
         return self._record
 
+    @property
+    def name(self) -> str:
+        return self.__class__.__name__
+
+    @property
+    def isbn(self) -> str:
+        return get_isbn(self._record)
+
     def act(self):
         raise NotImplementedError()
 
@@ -45,6 +53,10 @@ class RegisterNew(Action):
 
     def act(self):
         pass
+
+    @property
+    def isbn(self) -> str:
+        return self._isbn
 
 
 class Discard(Action):
@@ -137,7 +149,7 @@ def decide_actions(barcodes: Iterable[str],
         records = isbn_record_map.get(barcode, None)
 
         if not records:
-            record_actions.append(RegisterNew(None))
+            record_actions.append(RegisterNew(barcode))
             continue
 
         record = records.pop(0)
@@ -153,3 +165,14 @@ def decide_actions(barcodes: Iterable[str],
         record_actions.append(action)
 
     return record_actions
+
+
+def show_actions(actions: Iterable[Action], *, file=sys.stdout):
+    action_name_max = max(len(a.name) for a in actions)
+    line_format = '{:' + str(action_name_max) + '}  {} {}\n'
+
+    for action in actions:
+        record = action.record
+        title = record.title if record else 'no-title'
+        file.write(line_format.format(
+            action.name, action.isbn, title))
