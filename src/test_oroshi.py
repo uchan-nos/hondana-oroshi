@@ -301,3 +301,20 @@ class BookstoreTest(unittest.TestCase):
 
         record = self._instance.get_record(nir.record_id)
         self.assertTrue(record.inventoried)
+
+
+class OroshiTest(unittest.TestCase):
+    def setUp(self):
+        records = [FAKE_RECORD1, FAKE_RECORD2, FAKE_RECORD31]
+        self._bookstore = FakeBookstore(records)
+        self._stdin = io.StringIO()
+        self._stdout = io.StringIO()
+        self._instance = oroshi.Oroshi(
+            self._bookstore, stdin=self._stdin, stdout=self._stdout)
+
+    def test_scan_one(self):
+        self._stdin.write('{}\nEND_OF_BARCODE\n\n'.format(ISBN1))
+        self._stdin.seek(0)
+        self._instance.run()
+        r = self._bookstore.get_record(2)
+        self.assertTrue(r.inventoried)

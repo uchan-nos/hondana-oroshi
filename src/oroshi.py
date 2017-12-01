@@ -194,3 +194,21 @@ class Bookstore:
 
     def update_record(self, record: BookRecord):
         raise NotImplementedError()
+
+
+class Oroshi:
+    def __init__(self, bookstore: Bookstore, *, stdin=None, stdout=None):
+        self._bookstore = bookstore
+        self._stdin = sys.stdin if stdin is None else stdin
+        self._stdout = sys.stdout if stdout is None else stdout
+
+    def run(self):
+        barcodes, last_line = read_barcodes(self._stdin)
+
+        records = []
+        for barcode in set(barcodes):
+            records.extend(self._bookstore.find_records_by_isbn(barcode))
+
+        actions = decide_actions(barcodes, records)
+        show_actions(actions, file=self._stdout)
+        # TODO
