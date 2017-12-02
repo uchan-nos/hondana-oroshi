@@ -173,9 +173,10 @@ class OroshiFuncTest(unittest.TestCase):
             (oroshi.ActionSelection(True, a) for a in actions), file=stdout)
 
         stdout.seek(0)
-        _ = stdout.readline()
+        _ = stdout.readline()  # header line
         line = stdout.readline()
         self.assertIn('[*]', line)
+        self.assertRegex(line, r'(^|\D)0($|\D)')
         self.assertIn(ISBN1, line)
         self.assertIn(FAKE_RECORD2.title, line)
         self.assertIn(oroshi.TakeInventory(None, None).name, line)
@@ -213,12 +214,20 @@ class OroshiFuncTest(unittest.TestCase):
         action_selection = oroshi.select_actions(actions, stdin=stdin, stdout=stdout)
 
         self.assertEqual(len(action_selection), 3)
+
         self.assertTrue(action_selection[0].selected)
         self.assertIsInstance(action_selection[0].action, oroshi.TakeInventory)
         self.assertFalse(action_selection[1].selected)
         self.assertIsInstance(action_selection[1].action, oroshi.Found)
         self.assertTrue(action_selection[2].selected)
         self.assertIsInstance(action_selection[2].action, oroshi.TakeInventory)
+
+        stdout.seek(0)
+        found_cmd_line = False
+        for line in stdout:
+            if 'do' in line:
+                found_cmd_line = True
+        self.assertTrue(found_cmd_line)
 
 
 class FakePrinter:

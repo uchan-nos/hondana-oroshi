@@ -199,16 +199,18 @@ def show_action_selections(
     actsels = list(action_selections)
     actname_max = max(len(s.action.name) for s in actsels)
     isbn_max = max(len(s.action.isbn) for s in actsels)
-    line_format = '[{:1}] {:' + str(actname_max) + '}  {:' + str(isbn_max) + '}  {}\n'
+    line_format = (
+        '{:3}: {:2} {:' + str(actname_max) + '}  {:'
+        + str(isbn_max) + '}  {}\n')
 
     # show header
-    file.write(line_format.format('', 'Action', 'ISBN', 'Book title'))
+    file.write(line_format.format('sel', 'Id', 'Action', 'ISBN', 'Book title'))
 
-    for actsel in actsels:
+    for i, actsel in enumerate(actsels):
         record =  actsel.action.record
         title = record.title if record else 'no-title'
         file.write(line_format.format(
-             '*' if actsel.selected else ' ',
+             '[*]' if actsel.selected else '[ ]', i,
              actsel.action.name,  actsel.action.isbn, title))
 
 
@@ -220,14 +222,21 @@ def select_actions(actions: Iterable[Action], *, stdin=None, stdout=None) \
     selections = [ActionSelection(True, a) for a in actions]
     while True:
         show_action_selections(selections, file=stdout)
-        cmd = stdin.readline().strip()
 
-        if cmd == 'do':
-            break
-        if cmd.isdigit():
-            index = int(cmd)
-            sel = selections[index]
-            selections[index] = ActionSelection(not sel.selected, sel.action)
+        while True:
+            stdout.write('"do", "quit", or an index >')
+            stdout.flush()
+            cmd = stdin.readline().strip()
+
+            if cmd == 'do':
+                return selections
+            if cmd == 'quit':
+                sys.exit(0)
+            if cmd.isdigit():
+                index = int(cmd)
+                sel = selections[index]
+                selections[index] = ActionSelection(not sel.selected, sel.action)
+                break
 
     return selections
 
