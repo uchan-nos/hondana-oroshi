@@ -190,6 +190,22 @@ class OroshiFuncTest(unittest.TestCase):
         self.assertNotIn(FAKE_RECORD2.title, line)
         self.assertIn(oroshi.RegisterNew(None).name, line)
 
+    def test_select_actions(self):
+        stdin = io.StringIO('1\ndo\n')
+        stdout = io.StringIO()
+        actions = oroshi.decide_actions(
+            [ISBN1, ISBN1, ISBN2],
+            [FAKE_RECORD2, FAKE_RECORD22, FAKE_RECORD30])
+        action_selection = oroshi.select_actions(actions, stdin=stdin, stdout=stdout)
+
+        self.assertEqual(len(action_selection), 3)
+        self.assertTrue(action_selection[0].selected)
+        self.assertIsInstance(action_selection[0].action, oroshi.TakeInventory)
+        self.assertFalse(action_selection[1].selected)
+        self.assertIsInstance(action_selection[1].action, oroshi.Found)
+        self.assertTrue(action_selection[2].selected)
+        self.assertIsInstance(action_selection[2].action, oroshi.TakeInventory)
+
 
 class FakePrinter:
     def __init__(self):

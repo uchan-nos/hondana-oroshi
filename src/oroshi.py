@@ -7,6 +7,8 @@ from typing import Iterable
 BookRecord = collections.namedtuple(
     'BookRecord',
     ['record_id', 'status', 'title', 'isbn10', 'isbn13', 'exists', 'inventoried'])
+ActionSelection = collections.namedtuple(
+    'ActionSelection', ['selected', 'action'])
 
 
 class RecordStatus(enum.Enum):
@@ -180,6 +182,26 @@ def show_actions(actions: Iterable[Action], *, file=sys.stdout):
         title = record.title if record else 'no-title'
         file.write(line_format.format(
             action.name, action.isbn, title))
+
+
+def select_actions(actions: Iterable[Action], *, stdin=None, stdout=None) \
+        -> Iterable[ActionSelection]:
+    stdin = sys.stdin if stdin is None else stdin
+    stdout = sys.stdout if stdout is None else stdout
+
+    selections = [ActionSelection(True, a) for a in actions]
+    while True:
+        show_actions(actions, file=stdout)
+        cmd = stdin.readline().strip()
+
+        if cmd == 'do':
+            break
+        if cmd.isdigit():
+            index = int(cmd)
+            sel = selections[index]
+            selections[index] = ActionSelection(not sel.selected, sel.action)
+
+    return selections
 
 
 class Bookstore:
