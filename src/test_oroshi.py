@@ -229,6 +229,21 @@ class OroshiFuncTest(unittest.TestCase):
                 found_cmd_line = True
         self.assertTrue(found_cmd_line)
 
+    def test_select_actions_out_of_index(self):
+        stdin = io.StringIO('1\ndo\n')
+        stdout = io.StringIO()
+        actions = oroshi.decide_actions([ISBN1], [FAKE_RECORD2], None)
+        _ = oroshi.select_actions(actions, stdin=stdin, stdout=stdout)
+
+        # assert select_actions raises no exceptions
+
+    def test_select_actions_end_of_file(self):
+        stdin = io.StringIO()
+        stdout = io.StringIO()
+        actions = oroshi.decide_actions([ISBN1], [FAKE_RECORD2], None)
+        with self.assertRaises(SystemExit):
+            _ = oroshi.select_actions(actions, stdin=stdin, stdout=stdout)
+
 
 class FakePrinter:
     def __init__(self):

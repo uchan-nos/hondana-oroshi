@@ -224,9 +224,11 @@ def select_actions(actions: Iterable[Action], *, stdin=None, stdout=None) \
         show_action_selections(selections, file=stdout)
 
         while True:
-            stdout.write('"do", "quit", or an index >')
-            stdout.flush()
-            cmd = stdin.readline().strip()
+            print('"do", "quit", or an index >', file=stdout, end='', flush=True)
+            cmd = stdin.readline()
+            if cmd == '':
+                sys.exit(0)
+            cmd = cmd.strip()
 
             if cmd == 'do':
                 return selections
@@ -234,8 +236,12 @@ def select_actions(actions: Iterable[Action], *, stdin=None, stdout=None) \
                 sys.exit(0)
             if cmd.isdigit():
                 index = int(cmd)
-                sel = selections[index]
-                selections[index] = ActionSelection(not sel.selected, sel.action)
+                try:
+                    sel = selections[index]
+                    selections[index] = ActionSelection(not sel.selected, sel.action)
+                except IndexError:
+                    print('Index must be in range {} - {}.'.format(0, index),
+                          file=stdout, flush=True)
                 break
 
     return selections
