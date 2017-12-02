@@ -17,6 +17,20 @@ class RecordStatus(enum.Enum):
     LOST = 3
 
 
+class Bookstore:
+    def find_records_by_isbn(self, isbn: str) -> Iterable[BookRecord]:
+        raise NotImplementedError()
+
+    def get_record(self, record_id: int) -> BookRecord:
+        raise NotImplementedError()
+
+    def add_record(self, record: BookRecord):
+        raise NotImplementedError()
+
+    def update_record(self, record: BookRecord):
+        raise NotImplementedError()
+
+
 class Action:
     def __init__(self, record: BookRecord):
         self._record = record
@@ -41,11 +55,21 @@ class Action:
 
 
 class TakeInventory(Action):
-    def __init__(self, record: BookRecord):
+    def __init__(self, record: BookRecord, bookstore: Bookstore):
         super().__init__(record)
+        self._bookstore = bookstore
 
     def act(self):
-        pass
+        r = self.record
+        new_record = BookRecord(
+            record_id=r.record_id,
+            status=r.status,
+            title=r.title,
+            isbn10=r.isbn10,
+            isbn13=r.isbn13,
+            exists=r.exists,
+            inventoried=True)
+        self._bookstore.update_record(new_record)
 
 
 class RegisterNew(Action):
@@ -140,7 +164,8 @@ def sort_records(records: Iterable[BookRecord]) -> Iterable[BookRecord]:
 
 
 def decide_actions(barcodes: Iterable[str],
-                   records: Iterable[BookRecord]) -> Iterable[Action]:
+                   records: Iterable[BookRecord],
+                   bookstore: Bookstore) -> Iterable[Action]:
     isbn_record_map = split_records_by_isbn(records)
     for isbn, records in isbn_record_map.items():
         not_inventoried_records = [r for r in records if not r.inventoried]
@@ -162,26 +187,29 @@ def decide_actions(barcodes: Iterable[str],
         elif record.status is RecordStatus.LOST:
             action = Found(record)
         else:
-            action = TakeInventory(record)
+            action = TakeInventory(record, bookstore)
 
         record_actions.append(action)
 
     return record_actions
 
 
-def show_actions(actions: Iterable[Action], *, file=sys.stdout):
-    actname_max = max(len(a.name) for a in actions)
-    isbn_max = max(len(a.isbn) for a in actions)
-    line_format = '{:' + str(actname_max) + '}  {:' + str(isbn_max) + '}  {}\n'
+def show_action_selections(
+        action_selections: Iterable[ActionSelection], *, file=sys.stdout):
+    actsels = list(action_selections)
+    actname_max = max(len(s.action.name) for s in actsels)
+    isbn_max = max(len(s.action.isbn) for s in actsels)
+    line_format = '[{:1}] {:' + str(actname_max) + '}  {:' + str(isbn_max) + '}  {}\n'
 
     # show header
-    file.write(line_format.format('Action', 'ISBN', 'Book title'))
+    file.write(line_format.format('', 'Action', 'ISBN', 'Book title'))
 
-    for action in actions:
-        record = action.record
+    for actsel in actsels:
+        record =  actsel.action.record
         title = record.title if record else 'no-title'
         file.write(line_format.format(
-            action.name, action.isbn, title))
+             '*' if actsel.selected else ' ',
+             actsel.action.name,  actsel.action.isbn, title))
 
 
 def select_actions(actions: Iterable[Action], *, stdin=None, stdout=None) \
@@ -191,7 +219,7 @@ def select_actions(actions: Iterable[Action], *, stdin=None, stdout=None) \
 
     selections = [ActionSelection(True, a) for a in actions]
     while True:
-        show_actions(actions, file=stdout)
+        show_action_selections(selections, file=stdout)
         cmd = stdin.readline().strip()
 
         if cmd == 'do':
@@ -202,20 +230,6 @@ def select_actions(actions: Iterable[Action], *, stdin=None, stdout=None) \
             selections[index] = ActionSelection(not sel.selected, sel.action)
 
     return selections
-
-
-class Bookstore:
-    def find_records_by_isbn(self, isbn: str) -> Iterable[BookRecord]:
-        raise NotImplementedError()
-
-    def get_record(self, record_id: int) -> BookRecord:
-        raise NotImplementedError()
-
-    def add_record(self, record: BookRecord):
-        raise NotImplementedError()
-
-    def update_record(self, record: BookRecord):
-        raise NotImplementedError()
 
 
 class Oroshi:
@@ -231,6 +245,10 @@ class Oroshi:
         for barcode in set(barcodes):
             records.extend(self._bookstore.find_records_by_isbn(barcode))
 
-        actions = decide_actions(barcodes, records)
-        show_actions(actions, file=self._stdout)
-        # TODO
+        actions = decide_actions(barcodes, records, self._bookstore)
+        action_selections = select_actions(
+            actions, stdin=self._stdin, stdout=self._stdout)
+        for actsel in action_selections:
+            if not actsel.selected:
+                continue
+            actsel.action.act()

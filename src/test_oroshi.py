@@ -87,7 +87,7 @@ class OroshiFuncTest(unittest.TestCase):
         # FAKE_RECORD2, FAKE_RECORD30: 棚卸しておらず、本棚に存在する
         fake_records = [FAKE_RECORD2, FAKE_RECORD30]
         barcodes = [ISBN1, ISBN2]
-        actions = oroshi.decide_actions(barcodes, fake_records)
+        actions = oroshi.decide_actions(barcodes, fake_records, None)
 
         self.assertEqual(len(actions), 2)
 
@@ -100,7 +100,7 @@ class OroshiFuncTest(unittest.TestCase):
     def test_decide_actions_バーコードに対応するレコードが無い(self):
         fake_records = []
         barcodes = [ISBN1]
-        actions = oroshi.decide_actions(barcodes, fake_records)
+        actions = oroshi.decide_actions(barcodes, fake_records, None)
 
         self.assertEqual(len(actions), 1)
 
@@ -112,7 +112,7 @@ class OroshiFuncTest(unittest.TestCase):
         # FAKE_RECORD2: 棚卸しておらず、本棚に存在する
         fake_records = [FAKE_RECORD2]
         barcodes = [ISBN1, ISBN1]
-        actions = oroshi.decide_actions(barcodes, fake_records)
+        actions = oroshi.decide_actions(barcodes, fake_records, None)
 
         self.assertEqual(len(actions), 2)
 
@@ -128,60 +128,74 @@ class OroshiFuncTest(unittest.TestCase):
             FAKE_RECORD1, FAKE_RECORD3,
             FAKE_RECORD11, FAKE_RECORD13,
             FAKE_RECORD21, FAKE_RECORD23]
-        action, = oroshi.decide_actions([ISBN1], fake_records)
+        action, = oroshi.decide_actions([ISBN1], fake_records, None)
         self.assertIsInstance(action, oroshi.RegisterNew)
         self.assertIsNone(action.record)
 
     def test_decide_actions_本が存在せず棚にある(self):
         # 存在しないはずの本なので捨てる。
-        action, = oroshi.decide_actions([ISBN1], [FAKE_RECORD4])
+        action, = oroshi.decide_actions([ISBN1], [FAKE_RECORD4], None)
         self.assertIsInstance(action, oroshi.Discard)
         self.assertEqual(action.record, FAKE_RECORD4)
 
     def test_decide_actions_本が存在せず借りられている(self):
         # バーコードが読み取れたということは、その本は事実そこにある。
         # つまり、誰にも借りられていないので捨てて良い。
-        action, = oroshi.decide_actions([ISBN1], [FAKE_RECORD14])
+        action, = oroshi.decide_actions([ISBN1], [FAKE_RECORD14], None)
         self.assertIsInstance(action, oroshi.Discard)
         self.assertEqual(action.record, FAKE_RECORD14)
 
     def test_decide_actions_本が存在せず紛失している(self):
         # バーコードが読み取れたということは、その本は事実そこにある。
         # つまり、誰にも借りられていないので捨てて良い。
-        action, = oroshi.decide_actions([ISBN1], [FAKE_RECORD24])
+        action, = oroshi.decide_actions([ISBN1], [FAKE_RECORD24], None)
         self.assertIsInstance(action, oroshi.Discard)
         self.assertEqual(action.record, FAKE_RECORD24)
 
     def test_decide_actions_本が存在し借りられている(self):
         # バーコードが読み取れたということは、その本は事実そこにある。
         # 誰にも借りられていないがステータスがそのままの可能性がある。
-        action, = oroshi.decide_actions([ISBN1], [FAKE_RECORD12])
+        action, = oroshi.decide_actions([ISBN1], [FAKE_RECORD12], None)
         self.assertIsInstance(action, oroshi.Investigate)
         self.assertEqual(action.record, FAKE_RECORD12)
 
     def test_decide_actions_本が存在し紛失している(self):
         # バーコードが読み取れたということは、その本は事実そこにある。
         # 紛失中ステータスを発見ステータスに変える。
-        action, = oroshi.decide_actions([ISBN1], [FAKE_RECORD22])
+        action, = oroshi.decide_actions([ISBN1], [FAKE_RECORD22], None)
         self.assertIsInstance(action, oroshi.Found)
         self.assertEqual(action.record, FAKE_RECORD22)
 
-    def test_show_actions(self):
+    def test_show_action_selections(self):
         stdout = io.StringIO()
-        actions = oroshi.decide_actions([ISBN1], [FAKE_RECORD2])
-        oroshi.show_actions(actions, file=stdout)
+        actions = oroshi.decide_actions([ISBN1], [FAKE_RECORD2], None)
+        oroshi.show_action_selections(
+            (oroshi.ActionSelection(True, a) for a in actions), file=stdout)
 
         stdout.seek(0)
         _ = stdout.readline()
         line = stdout.readline()
+        self.assertIn('[*]', line)
         self.assertIn(ISBN1, line)
         self.assertIn(FAKE_RECORD2.title, line)
-        self.assertIn(oroshi.TakeInventory(None).name, line)
+        self.assertIn(oroshi.TakeInventory(None, None).name, line)
 
-    def test_show_actions_register_new(self):
+    def test_show_action_selections_not_selected(self):
         stdout = io.StringIO()
-        actions = oroshi.decide_actions([ISBN1], [])
-        oroshi.show_actions(actions, file=stdout)
+        actions = oroshi.decide_actions([ISBN1], [FAKE_RECORD2], None)
+        oroshi.show_action_selections(
+            (oroshi.ActionSelection(False, a) for a in actions), file=stdout)
+
+        stdout.seek(0)
+        _ = stdout.readline()
+        line = stdout.readline()
+        self.assertIn('[ ]', line)
+
+    def test_show_action_selections_register_new(self):
+        stdout = io.StringIO()
+        actions = oroshi.decide_actions([ISBN1], [], None)
+        oroshi.show_action_selections(
+            (oroshi.ActionSelection(True, a) for a in actions), file=stdout)
 
         stdout.seek(0)
         _ = stdout.readline()
@@ -195,7 +209,7 @@ class OroshiFuncTest(unittest.TestCase):
         stdout = io.StringIO()
         actions = oroshi.decide_actions(
             [ISBN1, ISBN1, ISBN2],
-            [FAKE_RECORD2, FAKE_RECORD22, FAKE_RECORD30])
+            [FAKE_RECORD2, FAKE_RECORD22, FAKE_RECORD30], None)
         action_selection = oroshi.select_actions(actions, stdin=stdin, stdout=stdout)
 
         self.assertEqual(len(action_selection), 3)
@@ -214,38 +228,6 @@ class FakePrinter:
     def __call__(self, msg: str):
         self.msg = msg
         self.called = True
-
-
-class TakeInventoryTest(unittest.TestCase):
-    def setUp(self):
-        self._instance = oroshi.TakeInventory(FAKE_RECORD2)
-
-    def test_act(self):
-        pass
-
-
-class DiscardTest(unittest.TestCase):
-    def setUp(self):
-        self._instance = oroshi.Discard(FAKE_RECORD4)
-        self._instance._print = FakePrinter()
-
-    def test_act(self):
-        self._instance.act()
-        self.assertTrue(self._instance._print.called)
-        self.assertIn('book1', self._instance._print.msg)
-        self.assertIn(ISBN1, self._instance._print.msg)
-
-
-class InvestigateTest(unittest.TestCase):
-    def setUp(self):
-        self._instance = oroshi.Investigate(FAKE_RECORD12)
-        self._instance._print = FakePrinter()
-
-    def test_act(self):
-        self._instance.act()
-        self.assertTrue(self._instance._print.called)
-        self.assertIn('book1', self._instance._print.msg)
-        self.assertIn(ISBN1, self._instance._print.msg)
 
 
 class FakeBookstore(oroshi.Bookstore):
@@ -270,6 +252,42 @@ class FakeBookstore(oroshi.Bookstore):
             raise RuntimeError('not found any records with ID', record.record_id)
         self._records.remove(r)
         self._records.append(record)
+
+
+class TakeInventoryTest(unittest.TestCase):
+    def setUp(self):
+        records = [FAKE_RECORD2]
+        self._bookstore = FakeBookstore(records)
+        self._instance = oroshi.TakeInventory(FAKE_RECORD2, self._bookstore)
+
+    def test_act(self):
+        self.assertFalse(self._bookstore.get_record(2).inventoried)
+        self._instance.act()
+        self.assertTrue(self._bookstore.get_record(2).inventoried)
+
+
+class DiscardTest(unittest.TestCase):
+    def setUp(self):
+        self._instance = oroshi.Discard(FAKE_RECORD4)
+        self._instance._print = FakePrinter()
+
+    def test_act(self):
+        self._instance.act()
+        self.assertTrue(self._instance._print.called)
+        self.assertIn('book1', self._instance._print.msg)
+        self.assertIn(ISBN1, self._instance._print.msg)
+
+
+class InvestigateTest(unittest.TestCase):
+    def setUp(self):
+        self._instance = oroshi.Investigate(FAKE_RECORD12)
+        self._instance._print = FakePrinter()
+
+    def test_act(self):
+        self._instance.act()
+        self.assertTrue(self._instance._print.called)
+        self.assertIn('book1', self._instance._print.msg)
+        self.assertIn(ISBN1, self._instance._print.msg)
 
 
 class BookstoreTest(unittest.TestCase):
@@ -329,7 +347,7 @@ class OroshiTest(unittest.TestCase):
             self._bookstore, stdin=self._stdin, stdout=self._stdout)
 
     def test_scan_one(self):
-        self._stdin.write('{}\nEND_OF_BARCODE\n\n'.format(ISBN1))
+        self._stdin.write('{}\nEND_OF_BARCODE\ndo\n'.format(ISBN1))
         self._stdin.seek(0)
         self._instance.run()
         r = self._bookstore.get_record(2)
