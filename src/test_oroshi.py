@@ -203,7 +203,7 @@ class OroshiFuncTest(unittest.TestCase):
         line = stdout.readline()
         self.assertIn(ISBN1, line)
         self.assertNotIn(FAKE_RECORD2.title, line)
-        self.assertIn(oroshi.RegisterNew(None).name, line)
+        self.assertIn(oroshi.RegisterNew(None, None).name, line)
 
     def test_select_actions(self):
         stdin = io.StringIO('1\ndo\n')
@@ -260,7 +260,10 @@ class FakeBookstore(oroshi.Bookstore):
         self._records = records
 
     def find_records_by_isbn(self, isbn: str):
-        return (r for r in self._records if oroshi.get_isbn(r) == isbn)
+        if len(isbn) == 10:
+            return (r for r in self._records if r.isbn10 == isbn)
+        if len(isbn) == 13:
+            return (r for r in self._records if r.isbn13 == isbn)
 
     def get_record(self, record_id: int):
         for r in self._records:
@@ -290,6 +293,22 @@ class TakeInventoryTest(unittest.TestCase):
         self.assertTrue(self._bookstore.get_record(2).inventoried)
 
 
+class RegisterNewTest(unittest.TestCase):
+    def setUp(self):
+        self._bookstore = FakeBookstore([])
+        self._instance = oroshi.RegisterNew(ISBN3, self._bookstore)
+
+    def test_act(self):
+        records = list(self._bookstore.find_records_by_isbn(ISBN3))
+        self.assertEqual(len(records), 0)
+
+        self._instance.act()
+
+        records = list(self._bookstore.find_records_by_isbn(ISBN3))
+        self.assertEqual(len(records), 1)
+        self.assertEqual(oroshi.get_isbn(records[0]), ISBN3)
+
+
 class DiscardTest(unittest.TestCase):
     def setUp(self):
         self._instance = oroshi.Discard(FAKE_RECORD4)
@@ -312,6 +331,24 @@ class InvestigateTest(unittest.TestCase):
         self.assertTrue(self._instance._print.called)
         self.assertIn('book1', self._instance._print.msg)
         self.assertIn(ISBN1, self._instance._print.msg)
+
+
+class FoundTest(unittest.TestCase):
+    def setUp(self):
+        records = [FAKE_RECORD22]
+        self._bookstore = FakeBookstore(records)
+        self._instance = oroshi.Found(FAKE_RECORD22, self._bookstore)
+
+    def test_act(self):
+        record = self._bookstore.get_record(22)
+        self.assertFalse(record.inventoried)
+        self.assertEqual(record.status, oroshi.RecordStatus.LOST)
+
+        self._instance.act()
+
+        record = self._bookstore.get_record(22)
+        self.assertTrue(record.inventoried)
+        self.assertEqual(record.status, oroshi.RecordStatus.IN_SHELF)
 
 
 class BookstoreTest(unittest.TestCase):

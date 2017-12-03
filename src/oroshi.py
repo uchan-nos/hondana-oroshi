@@ -73,12 +73,21 @@ class TakeInventory(Action):
 
 
 class RegisterNew(Action):
-    def __init__(self, isbn: str):
+    def __init__(self, isbn: str, bookstore: Bookstore):
         super().__init__(None)
         self._isbn = isbn
+        self._bookstore = bookstore
 
     def act(self):
-        pass
+        record = BookRecord(
+            record_id=None,
+            status=RecordStatus.IN_SHELF,
+            title='NO_TITLE',
+            isbn10=self._isbn if len(self._isbn) == 10 else None,
+            isbn13=self._isbn if len(self._isbn) == 13 else None,
+            exists='o',
+            inventoried=True)
+        self._bookstore.add_record(record)
 
     @property
     def isbn(self) -> str:
@@ -106,11 +115,21 @@ class Investigate(Action):
 
 
 class Found(Action):
-    def __init__(self, record: BookRecord):
+    def __init__(self, record: BookRecord, bookstore: Bookstore):
         super().__init__(record)
+        self._bookstore = bookstore
 
     def act(self):
-        pass
+        r = self.record
+        new_record = BookRecord(
+            record_id=r.record_id,
+            status=RecordStatus.IN_SHELF,
+            title=r.title,
+            isbn10=r.isbn10,
+            isbn13=r.isbn13,
+            exists=r.exists,
+            inventoried=True)
+        self._bookstore.update_record(new_record)
 
 
 def log(*args, **kwargs):
@@ -176,7 +195,7 @@ def decide_actions(barcodes: Iterable[str],
         records = isbn_record_map.get(barcode, None)
 
         if not records:
-            record_actions.append(RegisterNew(barcode))
+            record_actions.append(RegisterNew(barcode, bookstore))
             continue
 
         record = records.pop(0)
@@ -185,7 +204,7 @@ def decide_actions(barcodes: Iterable[str],
         elif record.status is RecordStatus.BORROWED:
             action = Investigate(record)
         elif record.status is RecordStatus.LOST:
-            action = Found(record)
+            action = Found(record, bookstore)
         else:
             action = TakeInventory(record, bookstore)
 
