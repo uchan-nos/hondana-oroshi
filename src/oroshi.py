@@ -219,11 +219,11 @@ def show_action_selections(
     actname_max = max(len(s.action.name) for s in actsels)
     isbn_max = max(len(s.action.isbn) for s in actsels)
     line_format = (
-        '{:3}: {:2} {:' + str(actname_max) + '}  {:'
+        '{:3}: {:3} {:' + str(actname_max) + '}  {:'
         + str(isbn_max) + '}  {}\n')
 
     # show header
-    file.write(line_format.format('sel', 'Id', 'Action', 'ISBN', 'Book title'))
+    file.write(line_format.format('sel', 'Idx', 'Action', 'ISBN', 'Book title'))
 
     for i, actsel in enumerate(actsels):
         record =  actsel.action.record
@@ -243,7 +243,7 @@ def select_actions(actions: Iterable[Action], *, stdin=None, stdout=None) \
         show_action_selections(selections, file=stdout)
 
         while True:
-            print('"do", "quit", or an index >', file=stdout, end='', flush=True)
+            print('"do", "quit", or an index> ', file=stdout, end='', flush=True)
             cmd = stdin.readline()
             if cmd == '':
                 sys.exit(0)
@@ -272,7 +272,8 @@ class Oroshi:
         self._stdin = sys.stdin if stdin is None else stdin
         self._stdout = sys.stdout if stdout is None else stdout
 
-    def run(self):
+    def run_once(self):
+        print('Scan barcodes', file=self._stdout, flush=True)
         barcodes, last_line = read_barcodes(self._stdin)
 
         records = []

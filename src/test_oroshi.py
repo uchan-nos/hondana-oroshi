@@ -410,6 +410,6 @@ class OroshiTest(unittest.TestCase):
     def test_scan_one(self):
         self._stdin.write('{}\nEND_OF_BARCODE\ndo\n'.format(ISBN1))
         self._stdin.seek(0)
-        self._instance.run()
+        self._instance.run_once()
         r = self._bookstore.get_record(2)
         self.assertTrue(r.inventoried)
