@@ -142,6 +142,9 @@ class KintoneBookstore(oroshi.Bookstore):
     def update_record(self, record: oroshi.BookRecord):
         return self._kintone_app.update(RawBookRecord.from_book_record(record))
 
+    def found(self, record_id: int):
+        return self._kintone_app.proceed_by_id(record_id, '発見')
+
 
 def main():
     kinapp = pykintone.load('kintone.yml').app(app_name='hondana')

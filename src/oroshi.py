@@ -30,6 +30,9 @@ class Bookstore:
     def update_record(self, record: BookRecord):
         raise NotImplementedError()
 
+    def found(self, record_id: int):
+        raise NotImplementedError()
+
 
 class Action:
     def __init__(self, record: BookRecord):
@@ -121,9 +124,10 @@ class Found(Action):
 
     def act(self):
         r = self.record
+        self._bookstore.found(r.record_id)
         new_record = BookRecord(
             record_id=r.record_id,
-            status=RecordStatus.IN_SHELF,
+            status=r.status,
             title=r.title,
             isbn10=r.isbn10,
             isbn13=r.isbn13,

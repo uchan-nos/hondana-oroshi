@@ -278,6 +278,30 @@ class FakeBookstore(oroshi.Bookstore):
         if r is None:
             raise RuntimeError('not found any records with ID', record.record_id)
         self._records.remove(r)
+        # reset status of the record
+        record = oroshi.BookRecord(
+            record_id=record.record_id,
+            status=r.status,
+            title=record.title,
+            isbn10=record.isbn10,
+            isbn13=record.isbn13,
+            exists=record.exists,
+            inventoried=record.inventoried)
+        self._records.append(record)
+
+    def found(self, record_id: int):
+        r = self.get_record(record_id)
+        if r is None:
+            raise RuntimeError('not found any records with ID', record.record_id)
+        self._records.remove(r)
+        record = oroshi.BookRecord(
+            record_id=r.record_id,
+            status=IN_SHELF,
+            title=r.title,
+            isbn10=r.isbn10,
+            isbn13=r.isbn13,
+            exists=r.exists,
+            inventoried=r.inventoried)
         self._records.append(record)
 
 
@@ -354,12 +378,12 @@ class FoundTest(unittest.TestCase):
 class BookstoreTest(unittest.TestCase):
     def setUp(self):
         records = [FAKE_RECORD1, FAKE_RECORD2,
-                   FAKE_RECORD31]
+                   FAKE_RECORD21, FAKE_RECORD31]
         self._instance = FakeBookstore(records)
 
     def test_find_records_by_isbn(self):
         records = list(self._instance.find_records_by_isbn(ISBN1))
-        self.assertEqual(len(records), 2)
+        self.assertEqual(len(records), 3)
         self.assertEqual(oroshi.get_isbn(records[0]), ISBN1)
 
         records = list(self._instance.find_records_by_isbn(ISBN3))
@@ -396,6 +420,18 @@ class BookstoreTest(unittest.TestCase):
 
         record = self._instance.get_record(nir.record_id)
         self.assertTrue(record.inventoried)
+
+    def test_update_record_lost(self):
+        r = self._instance.get_record(21)
+        self.assertEqual(r.status, LOST)
+
+        r_new = oroshi.BookRecord(r.record_id, IN_SHELF, r.title,
+                                  r.isbn10, r.isbn13, r.exists, r.inventoried)
+        self._instance.update_record(r_new)
+
+        r = self._instance.get_record(21)
+        self.assertEqual(r.status, LOST)
+
 
 
 class OroshiTest(unittest.TestCase):
