@@ -35,7 +35,15 @@ git clone git@github.com:uchan-nos/hondana-oroshi.git
 git clone git@github.com:uchan-nos/pykintone.git
 pip3 install pyyaml pytz tzlocal requests
 ```
-3. パソコンにバーコードスキャナを接続する
+3. kintone.yml を準備
+```
+domain: your-domain
+apps:
+    hondana:
+        id: xxx
+	token: yyy
+```
+4. パソコンにバーコードスキャナを接続する
     - 動作確認しているバーコードスキャナは BUSICOM BC-BR900L
 ## 使い方
 
