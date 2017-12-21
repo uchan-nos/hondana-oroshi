@@ -22,3 +22,39 @@ kintone 図書管理システムの棚卸用ツール
 | レンタル中     | 本が誰かに借りられている |
 | 紛失中         | 紛失している |
 
+## セットアップ
+
+On Windows:
+
+1. Python をインストール
+    - https://www.python.org/downloads/ から Python 3 系をダウンロードし、インストール
+    - cmd.exe で py.exe が起動できれば OK
+2. hondana-oroshi と、その依存パッケージをインストール
+```
+git clone git@github.com:uchan-nos/hondana-oroshi.git
+git clone git@github.com:uchan-nos/pykintone.git
+pip3 install pyyaml pytz tzlocal requests
+```
+3. パソコンにバーコードスキャナを接続する
+    - 動作確認しているバーコードスキャナは BUSICOM BC-BR900L
+## 使い方
+
+On Windows:
+
+```
+run.bat
+```
+
+で起動したら "Scan barcodes" と言われるので、ISBN バーコードをスキャンする。複数の本を連続でスキャンしてよい。同じ本（ISBN が同じ本）が複数冊ある場合でも、省略せずすべてスキャンすること。
+
+バーコードを一通りスキャンしたらエンターキーで空行を入力する。すると、各バーコードが kintone から検索され、アクションが決定される。
+
+あり得るアクションは次の通り。
+
+| アクション名  | 意味 |
+|---------------|------|
+| TakeInventory | 「棚卸」フラグにチェックを付ける。もっとも一般的なアクション |
+| RegisterNew   | kintone 上に、その ISBN を持つ棚卸未済のレコードがないので、新たに登録する |
+| Investigate   | レコードが不正な状態になっているので要調査。kintone に対しては何もしない |
+| Found         | 紛失中だった本が見つかったので「棚卸」フラグをチェックしつつ「紛失中」ステータスを更新する |
+| Discard       | この本は本棚に戻さず、破棄する |
