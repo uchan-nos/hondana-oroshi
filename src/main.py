@@ -86,6 +86,7 @@ class RawBookRecord(pykintone.model.kintoneModel):
 STATUS_MAP = {
     '本棚にあります': oroshi.RecordStatus.IN_SHELF,
     'レンタル中': oroshi.RecordStatus.BORROWED,
+    'レンタル中(まであと一歩)': oroshi.RecordStatus.BORROWED,
     '紛失中': oroshi.RecordStatus.LOST,
 }
 
@@ -97,7 +98,7 @@ class RawBookRecordWithStatus(RawBookRecord):
         self._property_details.append(pykintone.structure.PropertyDetail(
             'status',
             pykintone.structure.FieldType.STATUS,
-            field_name='ステータス'))
+            field_name='処理状況'))
 
     def __str__(self):
         return 'RawBookRecordWithStatus[{} {}{} exists={} invent={} {}]'.format(
