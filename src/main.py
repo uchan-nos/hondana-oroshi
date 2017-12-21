@@ -144,26 +144,10 @@ class KintoneBookstore(oroshi.Bookstore):
 
 
 def main():
-    #bookstore = FakeBookstore([FAKE_RECORD12, FAKE_RECORD2, FAKE_RECORD30])
-    #o = oroshi.Oroshi(bookstore)
-    #o.run_once()
-
     kinapp = pykintone.load('kintone.yml').app(app_name='hondana')
     bookstore = KintoneBookstore(kinapp)
-
-    print('find_records_by_isbn')
-    for record in bookstore.find_records_by_isbn('9784320112421'):
-        print(record)
-
-    print('get_record')
-    print(bookstore.get_record(10))
-
-    print('add_record')
-    r = bookstore.add_record(oroshi.BookRecord(
-        -1, oroshi.RecordStatus.LOST, 'lost book',
-        '', '9784789849944', 'o', True))
-    print(r)
-    print('ok', r.ok, r.message, r.error)
+    o = oroshi.Oroshi(bookstore)
+    o.run_once()
 
 
 if __name__ == '__main__':
