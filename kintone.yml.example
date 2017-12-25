@@ -1,0 +1,5 @@
+domain: <your-domain (only subdomain part)>
+apps:
+    hondana:
+        id: <app id>
+        token: <API token with read/write/add privilege>
