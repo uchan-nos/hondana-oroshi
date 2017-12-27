@@ -7,53 +7,6 @@ from typing import Iterable
 
 import oroshi
 
-ISBN1 = '9784789849944'
-ISBN2 = '9784839919849'
-ISBN3 = '4810180778'
-
-IN_SHELF = oroshi.RecordStatus.IN_SHELF
-BORROWED = oroshi.RecordStatus.BORROWED
-LOST = oroshi.RecordStatus.LOST
-
-FAKE_RECORD1  = oroshi.BookRecord(1,  IN_SHELF, 'book1', '', ISBN1, 'o', True)
-FAKE_RECORD2  = oroshi.BookRecord(2,  IN_SHELF, 'book1', '', ISBN1, 'o', False)
-FAKE_RECORD3  = oroshi.BookRecord(3,  IN_SHELF, 'book1', '', ISBN1, 'x', True)
-FAKE_RECORD4  = oroshi.BookRecord(4,  IN_SHELF, 'book1', '', ISBN1, 'x', False)
-FAKE_RECORD11 = oroshi.BookRecord(11, BORROWED, 'book1', '', ISBN1, 'o', True)
-FAKE_RECORD12 = oroshi.BookRecord(12, BORROWED, 'book1', '', ISBN1, 'o', False)
-FAKE_RECORD13 = oroshi.BookRecord(13, BORROWED, 'book1', '', ISBN1, 'x', True)
-FAKE_RECORD14 = oroshi.BookRecord(14, BORROWED, 'book1', '', ISBN1, 'x', False)
-FAKE_RECORD21 = oroshi.BookRecord(21, LOST,     'book1', '', ISBN1, 'o', True)
-FAKE_RECORD22 = oroshi.BookRecord(22, LOST,     'book1', '', ISBN1, 'o', False)
-FAKE_RECORD23 = oroshi.BookRecord(23, LOST,     'book1', '', ISBN1, 'x', True)
-FAKE_RECORD24 = oroshi.BookRecord(24, LOST,     'book1', '', ISBN1, 'x', False)
-FAKE_RECORD30 = oroshi.BookRecord(30, IN_SHELF, 'book2', '', ISBN2, 'o', False)
-FAKE_RECORD31 = oroshi.BookRecord(31, IN_SHELF, 'book3', ISBN3, '', 'o', False)
-
-
-class FakeBookstore(oroshi.Bookstore):
-    def __init__(self, records):
-        # record_id must be unique to each other.
-        self._records = records
-
-    def find_records_by_isbn(self, isbn: str):
-        return (r for r in self._records if oroshi.get_isbn(r) == isbn)
-
-    def get_record(self, record_id: int):
-        for r in self._records:
-            if r.record_id == record_id:
-                return r
-
-    def add_record(self, record: oroshi.BookRecord):
-        self._records.append(record)
-
-    def update_record(self, record: oroshi.BookRecord):
-        r = self.get_record(record.record_id)
-        if r is None:
-            raise RuntimeError('not found any records with ID', record.record_id)
-        self._records.remove(r)
-        self._records.append(record)
-
 
 class RawBookRecord(pykintone.model.kintoneModel):
     def __init__(self):
