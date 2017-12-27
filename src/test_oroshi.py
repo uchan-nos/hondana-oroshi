@@ -13,20 +13,20 @@ IN_SHELF = oroshi.RecordStatus.IN_SHELF
 BORROWED = oroshi.RecordStatus.BORROWED
 LOST = oroshi.RecordStatus.LOST
 
-FAKE_RECORD1  = oroshi.BookRecord(1,  IN_SHELF, 'book1', '', ISBN1, 'o', True)
-FAKE_RECORD2  = oroshi.BookRecord(2,  IN_SHELF, 'book1', '', ISBN1, 'o', False)
-FAKE_RECORD3  = oroshi.BookRecord(3,  IN_SHELF, 'book1', '', ISBN1, 'x', True)
-FAKE_RECORD4  = oroshi.BookRecord(4,  IN_SHELF, 'book1', '', ISBN1, 'x', False)
-FAKE_RECORD11 = oroshi.BookRecord(11, BORROWED, 'book1', '', ISBN1, 'o', True)
-FAKE_RECORD12 = oroshi.BookRecord(12, BORROWED, 'book1', '', ISBN1, 'o', False)
-FAKE_RECORD13 = oroshi.BookRecord(13, BORROWED, 'book1', '', ISBN1, 'x', True)
-FAKE_RECORD14 = oroshi.BookRecord(14, BORROWED, 'book1', '', ISBN1, 'x', False)
-FAKE_RECORD21 = oroshi.BookRecord(21, LOST,     'book1', '', ISBN1, 'o', True)
-FAKE_RECORD22 = oroshi.BookRecord(22, LOST,     'book1', '', ISBN1, 'o', False)
-FAKE_RECORD23 = oroshi.BookRecord(23, LOST,     'book1', '', ISBN1, 'x', True)
-FAKE_RECORD24 = oroshi.BookRecord(24, LOST,     'book1', '', ISBN1, 'x', False)
-FAKE_RECORD30 = oroshi.BookRecord(30, IN_SHELF, 'book2', '', ISBN2, 'o', False)
-FAKE_RECORD31 = oroshi.BookRecord(31, IN_SHELF, 'book3', ISBN3, '', 'o', False)
+FAKE_RECORD1  = oroshi.BookRecord(1,  IN_SHELF, 'book1', '', ISBN1, 'o', True,  'UI')
+FAKE_RECORD2  = oroshi.BookRecord(2,  IN_SHELF, 'book1', '', ISBN1, 'o', False, 'UI')
+FAKE_RECORD3  = oroshi.BookRecord(3,  IN_SHELF, 'book1', '', ISBN1, 'x', True,  'UI')
+FAKE_RECORD4  = oroshi.BookRecord(4,  IN_SHELF, 'book1', '', ISBN1, 'x', False, 'UI')
+FAKE_RECORD11 = oroshi.BookRecord(11, BORROWED, 'book1', '', ISBN1, 'o', True,  'UI')
+FAKE_RECORD12 = oroshi.BookRecord(12, BORROWED, 'book1', '', ISBN1, 'o', False, 'UI')
+FAKE_RECORD13 = oroshi.BookRecord(13, BORROWED, 'book1', '', ISBN1, 'x', True,  'UI')
+FAKE_RECORD14 = oroshi.BookRecord(14, BORROWED, 'book1', '', ISBN1, 'x', False, 'UI')
+FAKE_RECORD21 = oroshi.BookRecord(21, LOST,     'book1', '', ISBN1, 'o', True,  'UI')
+FAKE_RECORD22 = oroshi.BookRecord(22, LOST,     'book1', '', ISBN1, 'o', False, 'UI')
+FAKE_RECORD23 = oroshi.BookRecord(23, LOST,     'book1', '', ISBN1, 'x', True,  'UI')
+FAKE_RECORD24 = oroshi.BookRecord(24, LOST,     'book1', '', ISBN1, 'x', False, 'UI')
+FAKE_RECORD30 = oroshi.BookRecord(30, IN_SHELF, 'book2', '', ISBN2, 'o', False, 'UI')
+FAKE_RECORD31 = oroshi.BookRecord(31, IN_SHELF, 'book3', ISBN3, '', 'o', False, 'UI')
 
 
 class OroshiFuncTest(unittest.TestCase):
@@ -179,6 +179,7 @@ class OroshiFuncTest(unittest.TestCase):
         self.assertRegex(line, r'(^|\D)0($|\D)')
         self.assertIn(ISBN1, line)
         self.assertIn(FAKE_RECORD2.title, line)
+        self.assertIn(FAKE_RECORD2.type, line)
         self.assertIn(oroshi.TakeInventory(None, None).name, line)
 
     def test_show_action_selections_not_selected(self):
@@ -278,15 +279,8 @@ class FakeBookstore(oroshi.Bookstore):
         if r is None:
             raise RuntimeError('not found any records with ID', record.record_id)
         self._records.remove(r)
-        # reset status of the record
-        record = oroshi.BookRecord(
-            record_id=record.record_id,
-            status=r.status,
-            title=record.title,
-            isbn10=record.isbn10,
-            isbn13=record.isbn13,
-            exists=record.exists,
-            inventoried=record.inventoried)
+        # preserve original status
+        record = record._replace(status=r.status)
         self._records.append(record)
 
     def found(self, record_id: int):
@@ -294,14 +288,7 @@ class FakeBookstore(oroshi.Bookstore):
         if r is None:
             raise RuntimeError('not found any records with ID', record.record_id)
         self._records.remove(r)
-        record = oroshi.BookRecord(
-            record_id=r.record_id,
-            status=IN_SHELF,
-            title=r.title,
-            isbn10=r.isbn10,
-            isbn13=r.isbn13,
-            exists=r.exists,
-            inventoried=r.inventoried)
+        record = r._replace(status=IN_SHELF)
         self._records.append(record)
 
 
@@ -415,7 +402,8 @@ class BookstoreTest(unittest.TestCase):
 
         nir = get_not_inventoried_record(ISBN1)
         record = oroshi.BookRecord(nir.record_id, nir.status, nir.title,
-                                   nir.isbn10, nir.isbn13, nir.exists, True)
+                                   nir.isbn10, nir.isbn13, nir.exists,
+                                   True, nir.type)
         self._instance.update_record(record)
 
         record = self._instance.get_record(nir.record_id)
@@ -426,7 +414,8 @@ class BookstoreTest(unittest.TestCase):
         self.assertEqual(r.status, LOST)
 
         r_new = oroshi.BookRecord(r.record_id, IN_SHELF, r.title,
-                                  r.isbn10, r.isbn13, r.exists, r.inventoried)
+                                  r.isbn10, r.isbn13, r.exists,
+                                  r.inventoried, r.type)
         self._instance.update_record(r_new)
 
         r = self._instance.get_record(21)

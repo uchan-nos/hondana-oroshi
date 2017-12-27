@@ -16,10 +16,12 @@ class RawBookRecord(pykintone.model.kintoneModel):
         self.isbn13 = ''
         self.exists = ''
         self.inventoried = None
+        self.type = ''
 
     def __str__(self):
-        return 'RawBookRecord[{} {}{} exists={} invent={}]'.format(
-            self.title, self.isbn10, self.isbn13, self.exists, self.inventoried)
+        return 'RawBookRecord[{} {}{} exists={} invent={} type={}]'.format(
+            self.title, self.isbn10, self.isbn13, self.exists,
+            self.inventoried, self.type)
 
     @staticmethod
     def from_book_record(record: oroshi.BookRecord):
@@ -32,6 +34,7 @@ class RawBookRecord(pykintone.model.kintoneModel):
         raw_record.isbn13 = record.isbn13
         raw_record.exists = record.exists
         raw_record.inventoried = raw_inventoried
+        raw_record.type = record.type
 
         return raw_record
 
@@ -68,7 +71,8 @@ class RawBookRecordWithStatus(RawBookRecord):
             isbn10=self.isbn10,
             isbn13=self.isbn13,
             exists=self.exists,
-            inventoried=inventoried)
+            inventoried=inventoried,
+            type=self.type)
 
 
 class KintoneBookstore(oroshi.Bookstore):

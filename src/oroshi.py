@@ -1,3 +1,4 @@
+# 
 import collections
 import enum
 import sys
@@ -6,7 +7,8 @@ from typing import Iterable
 
 BookRecord = collections.namedtuple(
     'BookRecord',
-    ['record_id', 'status', 'title', 'isbn10', 'isbn13', 'exists', 'inventoried'])
+    ['record_id', 'status', 'title', 'isbn10', 'isbn13',
+     'exists', 'inventoried', 'type'])
 ActionSelection = collections.namedtuple(
     'ActionSelection', ['selected', 'action'])
 
@@ -63,15 +65,7 @@ class TakeInventory(Action):
         self._bookstore = bookstore
 
     def act(self):
-        r = self.record
-        new_record = BookRecord(
-            record_id=r.record_id,
-            status=r.status,
-            title=r.title,
-            isbn10=r.isbn10,
-            isbn13=r.isbn13,
-            exists=r.exists,
-            inventoried=True)
+        new_record = self.record._replace(inventoried=True)
         self._bookstore.update_record(new_record)
 
 
@@ -89,7 +83,8 @@ class RegisterNew(Action):
             isbn10=self._isbn if len(self._isbn) == 10 else None,
             isbn13=self._isbn if len(self._isbn) == 13 else None,
             exists='o',
-            inventoried=True)
+            inventoried=True,
+            type='未分類（要変更）')
         self._bookstore.add_record(record)
 
     @property
@@ -125,14 +120,7 @@ class Found(Action):
     def act(self):
         r = self.record
         self._bookstore.found(r.record_id)
-        new_record = BookRecord(
-            record_id=r.record_id,
-            status=r.status,
-            title=r.title,
-            isbn10=r.isbn10,
-            isbn13=r.isbn13,
-            exists=r.exists,
-            inventoried=True)
+        new_record = r._replace(inventoried=True)
         self._bookstore.update_record(new_record)
 
 
@@ -224,17 +212,19 @@ def show_action_selections(
     isbn_max = max(len(s.action.isbn) for s in actsels)
     line_format = (
         '{:3}: {:3} {:' + str(actname_max) + '}  {:'
-        + str(isbn_max) + '}  {}\n')
+        + str(isbn_max) + '}  {} ({})\n')
 
     # show header
-    file.write(line_format.format('sel', 'Idx', 'Action', 'ISBN', 'Book title'))
+    file.write(line_format.format(
+        'sel', 'Idx', 'Action', 'ISBN', 'Book title', 'Type'))
 
     for i, actsel in enumerate(actsels):
         record =  actsel.action.record
         title = record.title if record else 'no-title'
+        record_type = record.type if record else 'no-type'
         file.write(line_format.format(
              '[*]' if actsel.selected else '[ ]', i,
-             actsel.action.name,  actsel.action.isbn, title))
+             actsel.action.name,  actsel.action.isbn, title, record_type))
 
 
 def select_actions(actions: Iterable[Action], *, stdin=None, stdout=None) \
