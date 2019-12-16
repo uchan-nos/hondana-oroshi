@@ -26,11 +26,14 @@ kintone 図書管理システムの棚卸用ツール
 
 On Windows:
 
-1. Python をインストール
+1. Python と Git をインストール
     - https://www.python.org/downloads/ から Python 3 系をダウンロードし、インストール
     - cmd.exe で py.exe が起動できれば OK
+    - https://git-scm.com/ から Git for Windows をダウンロードし、インストール
+    - Git Bash がインストールされれば OK
 2. hondana-oroshi と、その依存パッケージをインストール
 ```
+（Git Bash 上で以下のコマンドを実行）
 git clone git@github.com:uchan-nos/hondana-oroshi.git
 git clone git@github.com:uchan-nos/pykintone.git
 pip3 install pyyaml pytz tzlocal requests
