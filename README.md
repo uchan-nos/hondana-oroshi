@@ -34,8 +34,8 @@ On Windows:
 2. hondana-oroshi と、その依存パッケージをインストール
 ```
 （Git Bash 上で以下のコマンドを実行）
-git clone git@github.com:uchan-nos/hondana-oroshi.git
-git clone git@github.com:uchan-nos/pykintone.git
+git clone https://github.com/uchan-nos/hondana-oroshi.git
+git clone https://github.com/uchan-nos/pykintone.git
 （cmd.exe 上で以下のコマンドを実行。pip3 がインストールされているディレクトリに移動する必要があるかも）
 pip3 install pyyaml pytz tzlocal requests
 ```
